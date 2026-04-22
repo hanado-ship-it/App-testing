@@ -61,7 +61,118 @@ const formatVND = (num: number) => {
   }).format(num);
 };
 
+// --- Translations ---
+const translations = {
+  vi: {
+    title: "Tính Thuế TNCN",
+    subtitle: "Quy định mới nhất về giảm trừ gia cảnh 2026",
+    contractType: "Loại hợp đồng",
+    official: "Chính thức (Cư trú)",
+    contractor: "Thử việc / CTV (Cư trú)",
+    nonResident: "Không cư trú",
+    incomeInfo: "Thông tin thu nhập",
+    mainSalary: "Lương chính (Đóng BHXH)",
+    lunch: "Ăn trưa",
+    phone: "Điện thoại",
+    gas: "Xăng dầu",
+    attendance: "Chuyên cần",
+    living: "Sinh hoạt",
+    fixedPerformance: "Thưởng hiệu suất cố định",
+    otherIncome: "Thu nhập/ Thưởng khác",
+    dependents: "Số người phụ thuộc",
+    subject: "Đối tượng",
+    vn: "VN",
+    nn: "NN",
+    totalGross: "Tổng thu nhập Gross",
+    ruleButton: "Quy định thuế 2026",
+    taxableIncome: "Thu nhập chịu thuế",
+    finalTaxableBase: "Thu nhập tính thuế",
+    employerCost: "Chi phí Doanh nghiệp (Total Cost)",
+    pit: "Thuế TNCN",
+    insuranceEmployee: "Bảo hiểm bắt buộc (NV)",
+    netSalary: "Thực nhận (Net)",
+    calcDetails: "Chi tiết tính toán",
+    taxLevelItem: "Bậc thuế / Khoản chi",
+    descriptionRate: "Mô tả / Tỷ lệ",
+    amount: "Số tiền",
+    insuranceMandatory: "Bảo hiểm bắt buộc",
+    taxLevel: "Bậc",
+    noTax: "Thu nhập chưa đạt ngưỡng chịu thuế.",
+    footerNote: "Dữ liệu tính toán dựa vào Luật số: 109/2025/QH15 về LUẬT THUẾ THU NHẬP CÁ NHÂN.",
+    modalTitle: "Quy định từ năm 2026",
+    personalDeduction: "Giảm trừ Bản thân",
+    dependentDeduction: "Giảm trừ Phụ thuộc",
+    taxTableTitle: "Biểu thuế lũy tiến 5 bậc 2026",
+    modalSubjectTitle: "Đối tượng áp dụng",
+    modalSubject1: "Chính thức: Biểu thuế lũy tiến 5 bậc (5% - 35%)",
+    modalSubject2: "Thử việc/CTV: Thuế suất toàn phần 10%",
+    modalSubject3: "Không cư trú: Thuế suất toàn phần 20%",
+    incomeMillion: "Thu nhập (Triệu)",
+    taxRate: "Thuế suất",
+    modalClose: "Đồng ý",
+    upTo: "Đến",
+    fromTo: "Từ {min} đến {max}",
+    over: "Trên",
+    million: "triệuđ",
+  },
+  en: {
+    title: "PIT Calculator",
+    subtitle: "Latest PIT regulations 2026",
+    contractType: "Contract Type",
+    official: "Official Resident",
+    contractor: "Contractor/Probation",
+    nonResident: "Non-resident",
+    incomeInfo: "Income Information",
+    mainSalary: "Main Salary (Insurance base)",
+    lunch: "Lunch Allowance",
+    phone: "Phone Allowance",
+    gas: "Gasoline Allowance",
+    attendance: "Attendance Allowance",
+    living: "Living Allowance",
+    fixedPerformance: "Fixed Performance Bonus",
+    otherIncome: "Other Income/Bonus",
+    dependents: "Dependents",
+    subject: "Nationality",
+    vn: "VN",
+    nn: "Foreigner",
+    totalGross: "Total Gross Salary",
+    ruleButton: "Tax Regulations 2026",
+    taxableIncome: "Taxable Income (Gross - Exemptions)",
+    finalTaxableBase: "Final Taxable Base (After Deductions)",
+    employerCost: "Employer Total Cost",
+    pit: "PIT (Income Tax)",
+    insuranceEmployee: "Mandatory Insurance (EE)",
+    netSalary: "Net Salary (Take-home)",
+    calcDetails: "Calculation Details",
+    taxLevelItem: "Tax Item / Bracket",
+    descriptionRate: "Description / Rate",
+    amount: "Amount",
+    insuranceMandatory: "Mandatory Insurance",
+    taxLevel: "Bracket",
+    noTax: "Income is below the taxable threshold.",
+    footerNote: "Calculation based on Law No: 109/2025/QH15 on PERSONAL INCOME TAX.",
+    modalTitle: "Regulations 2026",
+    personalDeduction: "Personal Deduction",
+    dependentDeduction: "Dependent Deduction",
+    taxTableTitle: "5-Tier Progressive Tax 2026",
+    modalSubjectTitle: "Applicable Subjects",
+    modalSubject1: "Official: Progressive 5-tier (5% - 35%)",
+    modalSubject2: "Contractor/Probation: Flat 10% rate",
+    modalSubject3: "Non-resident: Flat 20% rate",
+    incomeMillion: "Income (Million)",
+    taxRate: "Tax Rate",
+    modalClose: "Close",
+    upTo: "Up to",
+    fromTo: "{min} to {max}",
+    over: "Over",
+    million: "M",
+  }
+};
+
 export default function App() {
+  const [lang, setLang] = useState<'vi' | 'en'>('vi');
+  const t = translations[lang];
+
   const [contractType, setContractType] = useState<ContractType>(ContractType.OFFICIAL_RESIDENT);
   const [mainSalary, setMainSalary] = useState<number>(25000000);
   const [dependents, setDependents] = useState<number>(0);
@@ -186,31 +297,46 @@ export default function App() {
               <Calculator className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Tính Thuế TNCN <span className="text-blue-600">2026</span></h1>
-              <p className="text-sm text-slate-500 font-medium">Quy định mới nhất về giảm trừ gia cảnh 2026</p>
+              <h1 className="text-2xl font-bold text-slate-800 tracking-tight">{t.title} <span className="text-blue-600">2026</span></h1>
+              <p className="text-sm text-slate-500 font-medium">{t.subtitle}</p>
             </div>
           </div>
-          <div className="hidden md:flex bg-white p-1 rounded-lg border border-slate-200 shadow-sm overflow-hidden h-fit">
-            {Object.values(ContractType).map((type) => (
-              <button
-                key={type}
-                onClick={() => setContractType(type)}
-                className={`px-4 py-2 text-xs font-semibold rounded transition-all ${
-                  contractType === type 
-                    ? "bg-blue-600 text-white shadow-md" 
-                    : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-                }`}
-              >
-                {type}
-              </button>
-            ))}
+          
+          <div className="flex items-center gap-3">
+            {/* Language Toggle */}
+            <div className="flex p-1 bg-white border border-slate-200 rounded-lg shadow-sm">
+              <button 
+                onClick={() => setLang('vi')}
+                className={`px-3 py-1.5 text-xs font-bold rounded transition-all ${lang === 'vi' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-slate-600'}`}
+              >VN</button>
+              <button 
+                onClick={() => setLang('en')}
+                className={`px-3 py-1.5 text-xs font-bold rounded transition-all ${lang === 'en' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-slate-600'}`}
+              >EN</button>
+            </div>
+
+            <div className="hidden md:flex bg-white p-1 rounded-lg border border-slate-200 shadow-sm overflow-hidden h-fit">
+              {[ContractType.OFFICIAL_RESIDENT, ContractType.CONTRACTOR_RESIDENT, ContractType.NON_RESIDENT].map((type) => (
+                <button
+                  key={type}
+                  onClick={() => setContractType(type)}
+                  className={`px-4 py-2 text-xs font-semibold rounded transition-all ${
+                    contractType === type 
+                      ? "bg-blue-600 text-white shadow-md" 
+                      : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
+                  }`}
+                >
+                  {type === ContractType.OFFICIAL_RESIDENT ? t.official : type === ContractType.CONTRACTOR_RESIDENT ? t.contractor : t.nonResident}
+                </button>
+              ))}
+            </div>
           </div>
         </header>
 
         <main className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Mobile Contract Switcher */}
           <div className="lg:hidden flex bg-white p-1 rounded-lg border border-slate-200 shadow-sm overflow-x-auto no-scrollbar">
-            {Object.values(ContractType).map((type) => (
+            {[ContractType.OFFICIAL_RESIDENT, ContractType.CONTRACTOR_RESIDENT, ContractType.NON_RESIDENT].map((type) => (
               <button
                 key={type}
                 onClick={() => setContractType(type)}
@@ -220,7 +346,7 @@ export default function App() {
                     : "text-slate-500"
                 }`}
               >
-                {type}
+                {type === ContractType.OFFICIAL_RESIDENT ? t.official : type === ContractType.CONTRACTOR_RESIDENT ? t.contractor : t.nonResident}
               </button>
             ))}
           </div>
@@ -230,12 +356,12 @@ export default function App() {
             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
               <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
                 <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
-                Thông tin thu nhập
+                {t.incomeInfo}
               </h2>
 
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-700">Lương chính (Đóng BHXH)</label>
+                  <label className="text-sm font-semibold text-slate-700">{t.mainSalary}</label>
                   <div className="relative">
                     <input
                       type="number"
@@ -249,7 +375,7 @@ export default function App() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Ăn trưa</label>
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t.lunch}</label>
                     <input
                       type="number"
                       value={allowances.lunch}
@@ -258,7 +384,7 @@ export default function App() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Điện thoại</label>
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t.phone}</label>
                     <input
                       type="number"
                       value={allowances.phone}
@@ -267,7 +393,7 @@ export default function App() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Xăng dầu</label>
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t.gas}</label>
                     <input
                       type="number"
                       value={allowances.gas}
@@ -276,7 +402,7 @@ export default function App() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Chuyên cần</label>
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t.attendance}</label>
                     <input
                       type="number"
                       value={allowances.attendance}
@@ -285,7 +411,7 @@ export default function App() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Sinh hoạt</label>
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t.living}</label>
                     <input
                       type="number"
                       value={allowances.living}
@@ -294,7 +420,7 @@ export default function App() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Thưởng hiệu suất cố định</label>
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t.fixedPerformance}</label>
                     <input
                       type="number"
                       value={allowances.performance}
@@ -303,7 +429,7 @@ export default function App() {
                     />
                   </div>
                   <div className="col-span-2 space-y-1">
-                    <label className="text-xs font-bold text-orange-500 uppercase tracking-wider">Thu nhập/ Thưởng khác</label>
+                    <label className="text-xs font-bold text-orange-500 uppercase tracking-wider">{t.otherIncome}</label>
                     <input
                       type="number"
                       value={otherIncome}
@@ -318,22 +444,22 @@ export default function App() {
                     <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200">
                       <div className="flex items-center gap-2">
                         <Users className="w-4 h-4 text-slate-400" />
-                        <span className="text-xs font-bold text-slate-600 uppercase">Đối tượng</span>
+                        <span className="text-xs font-bold text-slate-600 uppercase">{t.subject}</span>
                       </div>
                       <div className="flex gap-2">
                         <button 
                           onClick={() => setIsForeigner(false)}
                           className={`px-3 py-1 text-[10px] font-bold rounded border ${!isForeigner ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-500 border-slate-200'}`}
-                        >VN</button>
+                        >{t.vn}</button>
                         <button 
                           onClick={() => setIsForeigner(true)}
                           className={`px-3 py-1 text-[10px] font-bold rounded border ${isForeigner ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-500 border-slate-200'}`}
-                        >NN</button>
+                        >{t.nn}</button>
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-semibold text-slate-700">Số người phụ thuộc</label>
+                      <label className="text-sm font-semibold text-slate-700">{t.dependents}</label>
                       <div className="flex items-center gap-3">
                         <button 
                           onClick={() => setDependents(Math.max(0, dependents - 1))}
@@ -357,7 +483,7 @@ export default function App() {
 
               <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
                 <div className="flex justify-between items-center bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Total Gross</span>
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t.totalGross}</span>
                   <span className="text-xl font-bold text-slate-800">{formatVND(totalGross)}</span>
                 </div>
               </div>
@@ -366,7 +492,7 @@ export default function App() {
                 onClick={() => setShowExplanation(true)}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-lg transition-all shadow-md shadow-blue-200 flex items-center justify-center gap-2 group"
               >
-                Quy định thuế 2026
+                {t.ruleButton}
                 <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
@@ -376,19 +502,19 @@ export default function App() {
           <section className="lg:col-span-12 xl:col-span-7 flex flex-col gap-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm col-span-1">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Thu nhập chịu thuế</p>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">{t.taxableIncome}</p>
                 <p className="text-xl font-bold text-slate-800">{formatVND(results.incomeAfterExemptions)}</p>
               </div>
               <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm col-span-1">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Thu nhập tính thuế</p>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">{t.finalTaxableBase}</p>
                 <p className="text-xl font-bold text-blue-600">{formatVND(results.finalTaxableBase)}</p>
               </div>
               <div className="bg-slate-100 p-5 rounded-xl border border-slate-300 shadow-sm col-span-1">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Chi phí Doanh nghiệp (Total Cost)</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{t.employerCost}</p>
                 <p className="text-xl font-bold text-slate-900">{formatVND(results.employerCost)}</p>
               </div>
               <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm col-span-1">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Thuế TNCN</p>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">{t.pit}</p>
                 <motion.p 
                   key={results.pit}
                   initial={{ scale: 0.9, opacity: 0 }}
@@ -399,11 +525,11 @@ export default function App() {
                 </motion.p>
               </div>
               <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm col-span-1">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Bảo hiểm bắt buộc (NV)</p>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">{t.insuranceEmployee}</p>
                 <p className="text-xl font-bold text-slate-700">{formatVND(results.totalInsuranceEmployee)}</p>
               </div>
               <div className="bg-blue-600 p-5 rounded-xl border border-blue-700 shadow-lg shadow-blue-100 col-span-1">
-                <p className="text-[10px] font-bold text-blue-100 uppercase tracking-wider mb-1">Thực nhận (Net)</p>
+                <p className="text-[10px] font-bold text-blue-100 uppercase tracking-wider mb-1">{t.netSalary}</p>
                 <motion.p 
                    key={results.netSalary}
                    initial={{ scale: 0.9, opacity: 0 }}
@@ -417,7 +543,7 @@ export default function App() {
 
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex-1 overflow-hidden flex flex-col">
               <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                <h2 className="text-xs font-bold text-slate-800 uppercase tracking-widest">Chi tiết tính toán</h2>
+                <h2 className="text-xs font-bold text-slate-800 uppercase tracking-widest">{t.calcDetails}</h2>
                 <div className="flex gap-2 text-[10px] uppercase font-bold text-slate-400">
                   <span>Net/Gross:</span>
                   <span className="text-blue-600 tracking-tight font-black">{((results.netSalary / totalGross) * 100).toFixed(1)}%</span>
@@ -428,21 +554,21 @@ export default function App() {
                 <table className="w-full text-left text-sm">
                   <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-wider sticky top-0">
                     <tr className="border-b border-slate-200">
-                      <th className="px-6 py-4">Bậc thuế / Khoản chi</th>
-                      <th className="px-6 py-4">Mô tả / Tỷ lệ</th>
-                      <th className="px-6 py-4 text-right">Số tiền</th>
+                      <th className="px-6 py-4">{t.taxLevelItem}</th>
+                      <th className="px-6 py-4">{t.descriptionRate}</th>
+                      <th className="px-6 py-4 text-right">{t.amount}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 italic">
                     {contractType === ContractType.OFFICIAL_RESIDENT && (
                       <>
                         <tr className="bg-slate-50/50">
-                          <td className="px-6 py-4 font-semibold text-slate-800 not-italic">Bảo hiểm bắt buộc (NV)</td>
+                          <td className="px-6 py-4 font-semibold text-slate-800 not-italic">{t.insuranceMandatory} (NV)</td>
                           <td className="px-6 py-4 text-xs font-bold text-slate-400 underline decoration-slate-300 decoration-dotted">{isForeigner ? '9.5%' : '10.5%'} Mức trần</td>
                           <td className="px-6 py-4 text-right font-bold text-slate-700 not-italic">-{formatVND(results.totalInsuranceEmployee)}</td>
                         </tr>
                         <tr className="bg-slate-100/30">
-                          <td className="px-6 py-4 font-semibold text-slate-600 not-italic">Bảo hiểm bắt buộc (Employer)</td>
+                          <td className="px-6 py-4 font-semibold text-slate-600 not-italic">{t.insuranceMandatory} (Employer)</td>
                           <td className="px-6 py-4 text-xs font-bold text-slate-400">{isForeigner ? '20.5%' : '21.5%'} Mức trần</td>
                           <td className="px-6 py-4 text-right font-bold text-slate-500 not-italic">+{formatVND(results.employerInsurance)}</td>
                         </tr>
@@ -451,7 +577,7 @@ export default function App() {
                     {results.breakdown.length > 0 ? (
                       results.breakdown.map((item, idx) => (
                         <tr key={idx} className={`${idx % 2 === 0 ? "bg-white" : "bg-slate-50/10"}`}>
-                          <td className="px-6 py-4 font-medium text-slate-600 not-italic">Bậc {idx + 1}</td>
+                          <td className="px-6 py-4 font-medium text-slate-600 not-italic">{t.taxLevel} {idx + 1}</td>
                           <td className="px-6 py-4 text-xs font-bold text-blue-500 bg-blue-50/30 rounded inline-block my-3 ml-6">{item.rate}</td>
                           <td className="px-6 py-4 text-right font-medium text-red-500 not-italic">{formatVND(item.amount)}</td>
                         </tr>
@@ -459,7 +585,7 @@ export default function App() {
                     ) : (
                       <tr>
                         <td colSpan={3} className="px-6 py-12 text-center text-slate-400 italic">
-                          Thu nhập chưa đạt ngưỡng chịu thuế.
+                          {t.noTax}
                         </td>
                       </tr>
                     )}
@@ -469,7 +595,7 @@ export default function App() {
 
               <div className="p-4 bg-blue-50 text-[11px] font-medium text-blue-700 flex justify-center items-center gap-2 border-t border-blue-100 text-center">
                 <Info className="w-4 h-4" />
-                Dữ liệu tính toán dựa vào Luật số: 109/2025/QH15 về LUẬT THUẾ THU NHẬP CÁ NHÂN.
+                {t.footerNote}
               </div>
             </div>
           </section>
@@ -500,33 +626,37 @@ export default function App() {
                 <div className="bg-slate-800 text-white p-2 rounded-lg">
                   <Settings2 className="w-5 h-5" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-800">Quy định từ năm 2026</h3>
+                <h3 className="text-xl font-bold text-slate-800">{t.modalTitle}</h3>
               </div>
 
               <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Giảm trừ Bản thân</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t.personalDeduction}</p>
                     <p className="text-lg font-bold text-slate-800 text-right">15,500,000đ</p>
                   </div>
                   <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Giảm trừ Phụ thuộc</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t.dependentDeduction}</p>
                     <p className="text-lg font-bold text-slate-800 text-right">6,600,000đ</p>
                   </div>
                 </div>
 
                 <div className="bg-blue-50 p-6 rounded-xl border border-blue-100">
-                  <h4 className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-4">Biểu thuế lũy tiến 5 bậc 2026</h4>
+                  <h4 className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-4">{t.taxTableTitle}</h4>
                   <div className="space-y-2">
                     {[
-                      { range: "Đến 10 triệuđ", rate: "5%" },
-                      { range: "Từ 10 đến 30 triệuđ", rate: "10%" },
-                      { range: "Từ 30 đến 60 triệuđ", rate: "20%" },
-                      { range: "Từ 60 đến 100 triệuđ", rate: "30%" },
-                      { range: "Trên 100 triệuđ", rate: "35%" },
+                      { range: `10 ${t.million}`, rate: "5%", type: "up" },
+                      { range: `10 - 30 ${t.million}`, rate: "10%", type: "range", min: 10, max: 30 },
+                      { range: `30 - 60 ${t.million}`, rate: "20%", type: "range", min: 30, max: 60 },
+                      { range: `60 - 100 ${t.million}`, rate: "30%", type: "range", min: 60, max: 100 },
+                      { range: `100 ${t.million}`, rate: "35%", type: "over" },
                     ].map((row, i) => (
                       <div key={i} className="flex justify-between items-center text-xs pb-2 border-b border-blue-100/50 last:border-none">
-                        <span className="text-blue-900 font-medium">{row.range}</span>
+                        <span className="text-blue-900 font-medium">
+                          {row.type === 'up' ? `${t.upTo} 10 ${t.million}` : 
+                           row.type === 'over' ? `${t.over} 100 ${t.million}` :
+                           t.fromTo.replace('{min}', row.min!.toString()).replace('{max}', row.max!.toString()) + ` ${t.million}`}
+                        </span>
                         <span className="bg-white px-2 py-1 rounded border border-blue-200 font-bold text-blue-700">{row.rate}</span>
                       </div>
                     ))}
@@ -538,7 +668,7 @@ export default function App() {
                 onClick={() => setShowExplanation(false)}
                 className="w-full mt-8 bg-slate-800 hover:bg-slate-900 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-slate-200"
               >
-                Đồng ý
+                {t.modalClose}
               </button>
             </motion.div>
           </motion.div>
