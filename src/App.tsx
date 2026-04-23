@@ -22,7 +22,7 @@ import { motion, AnimatePresence } from "motion/react";
 
 // --- Constants (New Regulations 2026) ---
 const PERSONAL_DEDUCTION = 15500000;
-const DEPENDENT_DEDUCTION = 6600000;
+const DEPENDENT_DEDUCTION = 6200000;
 const BASIC_SALARY_BASE = 2340000; 
 const MAX_SI_HI_SALARY = BASIC_SALARY_BASE * 20; 
 const MAX_UI_SALARY = 4960000 * 20; 
@@ -78,12 +78,13 @@ const translations = {
     attendance: "Chuyên cần",
     living: "Sinh hoạt",
     fixedPerformance: "Thưởng hiệu suất cố định",
-    otherIncome: "Thu nhập/ Thưởng khác",
+    otherIncome: "Thu nhập/ Thưởng khác (Gross)",
+    netGift: "Thưởng Net (Công ty trả thuế)",
     dependents: "Số người phụ thuộc",
     subject: "Đối tượng",
     vn: "VN",
     nn: "NN",
-    totalGross: "Tổng thu nhập Gross",
+    totalGross: "Tổng thu nhập gross (chưa gồm thưởng net)",
     ruleButton: "Quy định thuế 2026",
     taxableIncome: "Thu nhập chịu thuế",
     finalTaxableBase: "Thu nhập tính thuế",
@@ -130,12 +131,13 @@ const translations = {
     attendance: "Attendance Allowance",
     living: "Living Allowance",
     fixedPerformance: "Fixed Performance Bonus",
-    otherIncome: "Other Income/Bonus",
+    otherIncome: "Other Income (Gross)",
+    netGift: "Net Bonus (Tax-paid)",
     dependents: "Dependents",
     subject: "Nationality",
     vn: "VN",
     nn: "Foreigner",
-    totalGross: "Total Gross Salary",
+    totalGross: "Total Gross (Excl. Net Bonus)",
     ruleButton: "Tax Regulations 2026",
     taxableIncome: "Taxable Income (Gross - Exemptions)",
     finalTaxableBase: "Final Taxable Base (After Deductions)",
@@ -178,6 +180,7 @@ export default function App() {
   const [dependents, setDependents] = useState<number>(0);
   const [isForeigner, setIsForeigner] = useState<boolean>(false);
   const [otherIncome, setOtherIncome] = useState<number>(0);
+  const [netGift, setNetGift] = useState<number>(0);
   const [showExplanation, setShowExplanation] = useState(false);
 
   const formatInput = (val: number) => {
@@ -199,88 +202,131 @@ export default function App() {
     performance: 3000000
   });
 
-  const totalGross = useMemo(() => {
+  const grossUpNetToGross = (netTaxableValue: number) => {
+    if (netTaxableValue <= 0) return 0;
+    const netM = netTaxableValue / 1000000;
+    let grossM = 0;
+
+    if (netM <= 9.5) {
+      grossM = netM / 0.95;
+    } else if (netM <= 27.5) {
+      grossM = (netM - 0.5) / 0.9;
+    } else if (netM <= 51.5) {
+      grossM = (netM - 3.5) / 0.8;
+    } else if (netM <= 79.5) {
+      grossM = (netM - 9.5) / 0.7;
+    } else {
+      grossM = (netM - 14.5) / 0.65;
+    }
+
+    return grossM * 1000000;
+  };
+
+  const totalGrossManual = useMemo(() => {
     return mainSalary + Object.values(allowances).reduce((a: number, b: number) => a + b, 0) + otherIncome;
   }, [mainSalary, allowances, otherIncome]);
 
-  // --- Calculation Logic ---
   const results = useMemo(() => {
-    let si = 0, hi = 0, ui = 0, totalInsuranceEmployee = 0;
+    let incomeAfterExemptions = 0;
+    let finalTaxableBase = 0;
+    let totalInsuranceEmployee = 0;
     let employerInsurance = 0;
     let pit = 0;
-    let incomeAfterExemptions = totalGross; // This corresponds to "Thu nhập chịu thuế"
-    let finalTaxableBase = 0; // This corresponds to "Thu nhập tính thuế"
-    
     const breakdown: { range: string; rate: string; amount: number }[] = [];
 
-    // 1. Calculate Exempt Income (Only for Official contract)
+    // 1. Calculate Exempt Income
     let exemptIncome = 0;
     if (contractType === ContractType.OFFICIAL_RESIDENT) {
       const exemptLunch = Math.min(allowances.lunch, 730000);
       const exemptPhone = allowances.phone;
       exemptIncome = exemptLunch + exemptPhone;
-      
-      // Thu nhập chịu thuế = Total Gross - Exemptions (Other income is fully taxable)
-      incomeAfterExemptions = totalGross - exemptIncome;
     }
 
-    // 2. Insurance (Only for Official contract)
+    // 2. Base calculation (Insurance & Base TNTT Gross)
     if (contractType === ContractType.OFFICIAL_RESIDENT) {
-      const siRate = isForeigner ? SI_RATE_FOREIGN : SI_RATE_LOCAL;
-      const hiRate = isForeigner ? HI_RATE_FOREIGN : HI_RATE_LOCAL;
-      const uiRate = isForeigner ? UI_RATE_FOREIGN : UI_RATE_LOCAL;
       const erRate = isForeigner ? EMPLOYER_SI_HI_UI_RATE_FOREIGN : EMPLOYER_SI_HI_UI_RATE_LOCAL;
-
-      si = Math.min(mainSalary, MAX_SI_HI_SALARY) * siRate;
-      hi = Math.min(mainSalary, MAX_SI_HI_SALARY) * hiRate;
-      ui = Math.min(mainSalary, MAX_UI_SALARY) * uiRate;
+      const si = Math.min(mainSalary, MAX_SI_HI_SALARY) * (isForeigner ? SI_RATE_FOREIGN : SI_RATE_LOCAL);
+      const hi = Math.min(mainSalary, MAX_SI_HI_SALARY) * (isForeigner ? HI_RATE_FOREIGN : HI_RATE_LOCAL);
+      const ui = Math.min(mainSalary, MAX_UI_SALARY) * (isForeigner ? UI_RATE_FOREIGN : UI_RATE_LOCAL);
       totalInsuranceEmployee = si + hi + ui;
-
-      // Employer insurance
-      const employerSiHi = Math.min(mainSalary, MAX_SI_HI_SALARY) * (isForeigner ? 0.205 : 0.205); // Simplified below
-      // Actually per logic provided: 21.5% local, 20.5% foreign
       employerInsurance = Math.min(mainSalary, MAX_SI_HI_SALARY) * erRate;
     }
 
-    // 3. PIT Calculation
+    const totalDeduction = PERSONAL_DEDUCTION + (dependents * DEPENDENT_DEDUCTION);
+    
+    // Initial taxable base (Gross) before Net Gift
+    const baseIncomeSubjectToTax = totalGrossManual - exemptIncome;
+    let initialTaxableBaseGross = 0;
     if (contractType === ContractType.OFFICIAL_RESIDENT) {
-      const totalDeduction = PERSONAL_DEDUCTION + (dependents * DEPENDENT_DEDUCTION);
-      // Thu nhập tính thuế = Thu nhập chịu thuế - Bảo hiểm - Giảm trừ gia cảnh
-      finalTaxableBase = Math.max(0, incomeAfterExemptions - totalInsuranceEmployee - totalDeduction);
+      initialTaxableBaseGross = Math.max(0, baseIncomeSubjectToTax - totalInsuranceEmployee - totalDeduction);
+    } else {
+      initialTaxableBaseGross = totalGrossManual;
+    }
 
+    // Calculate initial tax for base salary to find "Initial TNTT NET"
+    let initialTax = 0;
+    if (contractType === ContractType.OFFICIAL_RESIDENT) {
+      for (let i = 0; i < TAX_BRACKETS_2026.length; i++) {
+        const b = TAX_BRACKETS_2026[i];
+        const prevLimit = i === 0 ? 0 : TAX_BRACKETS_2026[i - 1].limit;
+        if (initialTaxableBaseGross > prevLimit) {
+          initialTax += (Math.min(initialTaxableBaseGross, b.limit) - prevLimit) * b.rate;
+        }
+      }
+    } else {
+      const rate = contractType === ContractType.CONTRACTOR_RESIDENT ? 0.1 : 0.2;
+      initialTax = initialTaxableBaseGross * rate;
+    }
+    
+    const initialTaxableBaseNet = initialTaxableBaseGross - initialTax;
+
+    // 3. Gross up the combined Net
+    const targetTotalTaxableNet = initialTaxableBaseNet + netGift;
+    let totalTaxableGross = 0;
+    
+    if (contractType === ContractType.OFFICIAL_RESIDENT) {
+      totalTaxableGross = grossUpNetToGross(targetTotalTaxableNet);
+    } else {
+      const flatRate = contractType === ContractType.CONTRACTOR_RESIDENT ? 0.1 : 0.2;
+      totalTaxableGross = targetTotalTaxableNet / (1 - flatRate);
+    }
+
+    // Subtract the initial gross to find how much gross for the net gift
+    const grossOfNetGift = Math.max(0, totalTaxableGross - initialTaxableBaseGross);
+
+    // Final Numbers
+    finalTaxableBase = totalTaxableGross;
+    incomeAfterExemptions = baseIncomeSubjectToTax + grossOfNetGift;
+    const trueTotalGross = totalGrossManual + grossOfNetGift;
+
+    // 4. Detailed PIT breakdown
+    if (contractType === ContractType.OFFICIAL_RESIDENT) {
       if (finalTaxableBase > 0) {
         for (let i = 0; i < TAX_BRACKETS_2026.length; i++) {
           const current = TAX_BRACKETS_2026[i];
           const prevLimit = i === 0 ? 0 : TAX_BRACKETS_2026[i - 1].limit;
-
           if (finalTaxableBase > prevLimit) {
             const amountInRange = Math.min(finalTaxableBase, current.limit) - prevLimit;
             const taxInRange = amountInRange * current.rate;
             pit += taxInRange;
-            
-            breakdown.push({
-              range: `${formatVND(prevLimit)} - ${current.limit === Infinity ? "Trở lên" : formatVND(current.limit)}`,
-              rate: `${(current.rate * 100).toFixed(0)}%`,
-              amount: taxInRange
+            breakdown.push({ 
+              range: `${(prevLimit / 1000000)}M - ${current.limit === Infinity ? "++" : (current.limit / 1000000) + "M"}`, 
+              rate: `${(current.rate * 100).toFixed(0)}%`, 
+              amount: taxInRange 
             });
           }
         }
       }
-    } else if (contractType === ContractType.CONTRACTOR_RESIDENT) {
-      finalTaxableBase = totalGross;
-      pit = totalGross * 0.1;
-      breakdown.push({ range: "Toàn phần", rate: "10%", amount: pit });
     } else {
-      finalTaxableBase = totalGross;
-      pit = totalGross * 0.2;
-      breakdown.push({ range: "Toàn phần", rate: "20%", amount: pit });
+      const rate = contractType === ContractType.CONTRACTOR_RESIDENT ? 0.1 : 0.2;
+      pit = finalTaxableBase * rate;
+      breakdown.push({ range: "Flat Rate", rate: `${(rate * 100).toFixed(0)}%`, amount: pit });
     }
 
-    const netSalary = totalGross - totalInsuranceEmployee - pit;
-    const employerCost = totalGross + employerInsurance;
+    const netSalary = trueTotalGross - totalInsuranceEmployee - pit;
+    const employerCost = trueTotalGross + employerInsurance;
 
     return {
-      si, hi, ui, 
       totalInsuranceEmployee,
       employerInsurance,
       incomeAfterExemptions,
@@ -288,9 +334,11 @@ export default function App() {
       pit,
       netSalary,
       employerCost,
+      grossOfNetGift,
+      trueTotalGross,
       breakdown
     };
-  }, [contractType, mainSalary, totalGross, dependents, allowances, isForeigner]);
+  }, [contractType, mainSalary, totalGrossManual, netGift, dependents, allowances, isForeigner]);
 
   const handleAllowanceChange = (key: keyof typeof allowances, val: number) => {
     setAllowances(prev => ({ ...prev, [key]: val }));
@@ -437,8 +485,8 @@ export default function App() {
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-semibold focus:ring-blue-500 transition-all"
                     />
                   </div>
-                  <div className="col-span-2 space-y-1">
-                    <label className="text-xs font-bold text-orange-500 uppercase tracking-wider">{t.otherIncome}</label>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-orange-500 uppercase tracking-wider block min-h-[20px] leading-tight">{t.otherIncome}</label>
                     <input
                       type="text"
                       value={formatInput(otherIncome)}
@@ -446,43 +494,52 @@ export default function App() {
                       className="w-full px-3 py-2 border border-orange-200 bg-orange-50/30 rounded-lg text-sm font-bold focus:ring-orange-500 transition-all"
                     />
                   </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-teal-600 uppercase tracking-wider block min-h-[20px] leading-tight">{t.netGift}</label>
+                    <input
+                      type="text"
+                      value={formatInput(netGift)}
+                      onChange={(e) => setNetGift(parseInput(e.target.value))}
+                      className="w-full px-3 py-2 border border-teal-200 bg-teal-50/30 rounded-lg text-sm font-bold focus:ring-teal-500 transition-all"
+                    />
+                  </div>
                 </div>
 
                 {contractType === ContractType.OFFICIAL_RESIDENT && (
-                  <div className="space-y-3 pt-2">
-                    <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200">
-                      <div className="flex items-center gap-2">
-                        <Users className="w-4 h-4 text-slate-400" />
-                        <span className="text-xs font-bold text-slate-600 uppercase">{t.subject}</span>
+                  <div className="grid grid-cols-2 gap-4 items-end pt-2 border-t border-slate-200">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Users className="w-3 h-3 text-slate-400" />
+                        <span className="text-[10px] font-bold text-slate-500 uppercase">{t.subject}</span>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200">
                         <button 
                           onClick={() => setIsForeigner(false)}
-                          className={`px-3 py-1 text-[10px] font-bold rounded border ${!isForeigner ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-500 border-slate-200'}`}
+                          className={`flex-1 py-1 text-[10px] font-bold rounded ${!isForeigner ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:bg-slate-200'}`}
                         >{t.vn}</button>
                         <button 
                           onClick={() => setIsForeigner(true)}
-                          className={`px-3 py-1 text-[10px] font-bold rounded border ${isForeigner ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-500 border-slate-200'}`}
+                          className={`flex-1 py-1 text-[10px] font-bold rounded ${isForeigner ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:bg-slate-200'}`}
                         >{t.nn}</button>
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold text-slate-700">{t.dependents}</label>
-                      <div className="flex items-center gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">{t.dependents}</label>
+                      <div className="flex items-center bg-white border border-slate-200 rounded-lg overflow-hidden h-[34px]">
                         <button 
                           onClick={() => setDependents(Math.max(0, dependents - 1))}
-                          className="w-10 h-10 flex items-center justify-center border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors font-bold"
+                          className="w-8 h-full flex items-center justify-center bg-slate-50 border-r border-slate-200 hover:bg-slate-100 transition-colors text-xs font-bold text-slate-500"
                         >-</button>
                         <input 
                           type="text"
                           value={formatInput(dependents)}
                           onChange={(e) => setDependents(parseInput(e.target.value))}
-                          className="flex-1 text-center font-bold border border-slate-300 rounded-lg py-2"
+                          className="flex-1 text-center font-bold text-xs border-none focus:ring-0 p-0 h-full"
                         />
                         <button 
                           onClick={() => setDependents(dependents + 1)}
-                          className="w-10 h-10 flex items-center justify-center border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors font-bold"
+                          className="w-8 h-full flex items-center justify-center bg-slate-50 border-l border-slate-200 hover:bg-slate-100 transition-colors text-xs font-bold text-slate-500"
                         >+</button>
                       </div>
                     </div>
@@ -491,9 +548,13 @@ export default function App() {
               </div>
 
               <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                <div className="flex justify-between items-center bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+                <div className="flex justify-between items-center bg-white p-4 rounded-lg border border-slate-200 shadow-sm mb-2">
                   <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t.totalGross}</span>
-                  <span className="text-xl font-bold text-slate-800">{formatVND(totalGross)}</span>
+                  <span className="text-sm font-bold text-slate-800">{formatVND(totalGrossManual)}</span>
+                </div>
+                <div className="flex justify-between items-center bg-blue-50 p-4 rounded-lg border border-blue-100 shadow-sm">
+                  <span className="text-xs font-bold text-blue-400 uppercase tracking-widest">Total Gross (Final)</span>
+                  <span className="text-xl font-bold text-blue-800">{formatVND(results.trueTotalGross)}</span>
                 </div>
               </div>
 
@@ -555,7 +616,7 @@ export default function App() {
                 <h2 className="text-xs font-bold text-slate-800 uppercase tracking-widest">{t.calcDetails}</h2>
                 <div className="flex gap-2 text-[10px] uppercase font-bold text-slate-400">
                   <span>Net/Gross:</span>
-                  <span className="text-blue-600 tracking-tight font-black">{((results.netSalary / totalGross) * 100).toFixed(1)}%</span>
+                  <span className="text-blue-600 tracking-tight font-black">{((results.netSalary / results.trueTotalGross) * 100).toFixed(1)}%</span>
                 </div>
               </div>
               
@@ -573,14 +634,21 @@ export default function App() {
                       <>
                         <tr className="bg-slate-50/50">
                           <td className="px-6 py-4 font-semibold text-slate-800 not-italic">{t.insuranceMandatory} (NV)</td>
-                          <td className="px-6 py-4 text-xs font-bold text-slate-400 underline decoration-slate-300 decoration-dotted">{isForeigner ? '9.5%' : '10.5%'} Mức trần</td>
+                          <td className="px-6 py-4 text-xs font-bold text-slate-400 underline decoration-slate-300 decoration-dotted">{isForeigner ? '9.5%' : '10.5%'}</td>
                           <td className="px-6 py-4 text-right font-bold text-slate-700 not-italic">-{formatVND(results.totalInsuranceEmployee)}</td>
                         </tr>
                         <tr className="bg-slate-100/30">
                           <td className="px-6 py-4 font-semibold text-slate-600 not-italic">{t.insuranceMandatory} (Employer)</td>
-                          <td className="px-6 py-4 text-xs font-bold text-slate-400">{isForeigner ? '20.5%' : '21.5%'} Mức trần</td>
+                          <td className="px-6 py-4 text-xs font-bold text-slate-400">{isForeigner ? '20.5%' : '21.5%'}</td>
                           <td className="px-6 py-4 text-right font-bold text-slate-500 not-italic">+{formatVND(results.employerInsurance)}</td>
                         </tr>
+                        {results.grossOfNetGift > 0 && (
+                          <tr className="bg-teal-50/50">
+                            <td className="px-6 py-4 font-semibold text-teal-800 not-italic">{t.netGift} (Gross-up)</td>
+                            <td className="px-6 py-4 text-xs font-bold text-teal-400">Net bonus: {formatVND(netGift)}</td>
+                            <td className="px-6 py-4 text-right font-bold text-teal-700 not-italic">+{formatVND(results.grossOfNetGift)}</td>
+                          </tr>
+                        )}
                       </>
                     )}
                     {results.breakdown.length > 0 ? (
@@ -646,7 +714,7 @@ export default function App() {
                   </div>
                   <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t.dependentDeduction}</p>
-                    <p className="text-lg font-bold text-slate-800 text-right">6,600,000đ</p>
+                    <p className="text-lg font-bold text-slate-800 text-right">6,200,000đ</p>
                   </div>
                 </div>
 
