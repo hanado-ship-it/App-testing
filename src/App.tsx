@@ -180,6 +180,15 @@ export default function App() {
   const [otherIncome, setOtherIncome] = useState<number>(0);
   const [showExplanation, setShowExplanation] = useState(false);
 
+  const formatInput = (val: number) => {
+    return val === 0 ? "" : val.toLocaleString("vi-VN");
+  };
+
+  const parseInput = (val: string) => {
+    const num = Number(val.replace(/\./g, ""));
+    return isNaN(num) ? 0 : num;
+  };
+
   // Allowances state
   const [allowances, setAllowances] = useState({
     phone: 500000,
@@ -364,9 +373,9 @@ export default function App() {
                   <label className="text-sm font-semibold text-slate-700">{t.mainSalary}</label>
                   <div className="relative">
                     <input
-                      type="number"
-                      value={mainSalary}
-                      onChange={(e) => setMainSalary(Number(e.target.value))}
+                      type="text"
+                      value={formatInput(mainSalary)}
+                      onChange={(e) => setMainSalary(parseInput(e.target.value))}
                       className="w-full bg-white border border-slate-300 rounded-lg py-3 pl-4 pr-12 text-lg font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
                     />
                     <span className="absolute right-4 top-3.5 text-slate-400 font-bold">VND</span>
@@ -377,63 +386,63 @@ export default function App() {
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t.lunch}</label>
                     <input
-                      type="number"
-                      value={allowances.lunch}
-                      onChange={(e) => handleAllowanceChange("lunch", Number(e.target.value))}
+                      type="text"
+                      value={formatInput(allowances.lunch)}
+                      onChange={(e) => handleAllowanceChange("lunch", parseInput(e.target.value))}
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-semibold focus:ring-blue-500 transition-all"
                     />
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t.phone}</label>
                     <input
-                      type="number"
-                      value={allowances.phone}
-                      onChange={(e) => handleAllowanceChange("phone", Number(e.target.value))}
+                      type="text"
+                      value={formatInput(allowances.phone)}
+                      onChange={(e) => handleAllowanceChange("phone", parseInput(e.target.value))}
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-semibold focus:ring-blue-500 transition-all"
                     />
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t.gas}</label>
                     <input
-                      type="number"
-                      value={allowances.gas}
-                      onChange={(e) => handleAllowanceChange("gas", Number(e.target.value))}
+                      type="text"
+                      value={formatInput(allowances.gas)}
+                      onChange={(e) => handleAllowanceChange("gas", parseInput(e.target.value))}
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-semibold focus:ring-blue-500 transition-all"
                     />
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t.attendance}</label>
                     <input
-                      type="number"
-                      value={allowances.attendance}
-                      onChange={(e) => handleAllowanceChange("attendance", Number(e.target.value))}
+                      type="text"
+                      value={formatInput(allowances.attendance)}
+                      onChange={(e) => handleAllowanceChange("attendance", parseInput(e.target.value))}
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-semibold focus:ring-blue-500 transition-all"
                     />
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t.living}</label>
                     <input
-                      type="number"
-                      value={allowances.living}
-                      onChange={(e) => handleAllowanceChange("living", Number(e.target.value))}
+                      type="text"
+                      value={formatInput(allowances.living)}
+                      onChange={(e) => handleAllowanceChange("living", parseInput(e.target.value))}
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-semibold focus:ring-blue-500 transition-all"
                     />
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t.fixedPerformance}</label>
                     <input
-                      type="number"
-                      value={allowances.performance}
-                      onChange={(e) => handleAllowanceChange("performance", Number(e.target.value))}
+                      type="text"
+                      value={formatInput(allowances.performance)}
+                      onChange={(e) => handleAllowanceChange("performance", parseInput(e.target.value))}
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-semibold focus:ring-blue-500 transition-all"
                     />
                   </div>
                   <div className="col-span-2 space-y-1">
                     <label className="text-xs font-bold text-orange-500 uppercase tracking-wider">{t.otherIncome}</label>
                     <input
-                      type="number"
-                      value={otherIncome}
-                      onChange={(e) => setOtherIncome(Number(e.target.value))}
+                      type="text"
+                      value={formatInput(otherIncome)}
+                      onChange={(e) => setOtherIncome(parseInput(e.target.value))}
                       className="w-full px-3 py-2 border border-orange-200 bg-orange-50/30 rounded-lg text-sm font-bold focus:ring-orange-500 transition-all"
                     />
                   </div>
@@ -466,9 +475,9 @@ export default function App() {
                           className="w-10 h-10 flex items-center justify-center border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors font-bold"
                         >-</button>
                         <input 
-                          type="number"
-                          value={dependents}
-                          onChange={(e) => setDependents(Math.max(0, Number(e.target.value)))}
+                          type="text"
+                          value={formatInput(dependents)}
+                          onChange={(e) => setDependents(parseInput(e.target.value))}
                           className="flex-1 text-center font-bold border border-slate-300 rounded-lg py-2"
                         />
                         <button 
