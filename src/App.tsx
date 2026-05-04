@@ -123,6 +123,7 @@ const translations = {
     fromTo: "Từ {min} đến {max}",
     over: "Trên",
     million: "triệuđ",
+    flatTaxRate: "Thuế suất toàn phần",
   },
   en: {
     title: "PIT Calculator",
@@ -177,6 +178,7 @@ const translations = {
     fromTo: "{min} to {max}",
     over: "Over",
     million: "M",
+    flatTaxRate: "Flat Tax Rate",
   }
 };
 
@@ -185,7 +187,7 @@ export default function App() {
   const t = translations[lang];
 
   const [contractType, setContractType] = useState<ContractType>(ContractType.OFFICIAL_RESIDENT);
-  const [mainSalary, setMainSalary] = useState<number>(25000000);
+  const [mainSalary, setMainSalary] = useState<number>(0);
   const [dependents, setDependents] = useState<number>(0);
   const [isForeigner, setIsForeigner] = useState<boolean>(false);
   const [otherIncome, setOtherIncome] = useState<number>(0);
@@ -194,7 +196,7 @@ export default function App() {
   const [showExplanation, setShowExplanation] = useState(false);
 
   const formatInput = (val: number) => {
-    return val === 0 ? "" : val.toLocaleString("vi-VN");
+    return val.toLocaleString("vi-VN");
   };
 
   const parseInput = (val: string) => {
@@ -204,12 +206,12 @@ export default function App() {
 
   // Allowances state
   const [allowances, setAllowances] = useState({
-    phone: 500000,
-    lunch: 730000,
-    gas: 1000000,
-    attendance: 500000,
-    living: 2000000,
-    performance: 3000000
+    phone: 0,
+    lunch: 0,
+    gas: 0,
+    attendance: 0,
+    living: 0,
+    performance: 0
   });
 
   const grossUpNetToGross = (netTaxableValue: number) => {
@@ -692,7 +694,9 @@ export default function App() {
                     {results.breakdown.length > 0 ? (
                       results.breakdown.map((item, idx) => (
                         <tr key={idx} className={`${idx % 2 === 0 ? "bg-white" : "bg-slate-50/10"}`}>
-                          <td className="px-6 py-4 font-medium text-slate-600 not-italic">{t.taxLevel} {idx + 1}</td>
+                          <td className="px-6 py-4 font-medium text-slate-600 not-italic">
+                            {contractType === ContractType.OFFICIAL_RESIDENT ? `${t.taxLevel} ${idx + 1}` : t.flatTaxRate}
+                          </td>
                           <td className="px-6 py-4 text-xs font-bold text-blue-500 bg-blue-50/30 rounded inline-block my-3 ml-6">{item.rate}</td>
                           <td className="px-6 py-4 text-right font-medium text-red-500 not-italic">{formatVND(item.amount)}</td>
                         </tr>
