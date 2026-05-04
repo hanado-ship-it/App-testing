@@ -25,7 +25,14 @@ const PERSONAL_DEDUCTION = 15500000;
 const DEPENDENT_DEDUCTION = 6200000;
 const BASIC_SALARY_BASE = 2340000; 
 const MAX_SI_HI_SALARY = BASIC_SALARY_BASE * 20; 
-const MAX_UI_SALARY = 4960000 * 20; 
+
+// Unemployment Insurance (BHTN) Max Salary for 2026 (Projected)
+const MAX_UI_SALARY_REGIONS = {
+  region1: 5310000 * 20, // 106.200.000
+  region2: 4730000 * 20, // 94.600.000
+  region3: 4140000 * 20, // 82.800.000
+  region4: 3700000 * 20, // 74.000.000
+};
 
 // Local Employee Rates
 const SI_RATE_LOCAL = 0.08;
@@ -82,6 +89,7 @@ const translations = {
     netGift: "Thưởng Net (Công ty trả thuế)",
     dependents: "Số người phụ thuộc",
     subject: "Đối tượng",
+    region: "Vùng",
     vn: "VN",
     nn: "NN",
     totalGross: "Tổng thu nhập gross (chưa gồm thưởng net)",
@@ -135,6 +143,7 @@ const translations = {
     netGift: "Net Bonus (Tax-paid)",
     dependents: "Dependents",
     subject: "Nationality",
+    region: "Region",
     vn: "VN",
     nn: "Foreigner",
     totalGross: "Total Gross (Excl. Net Bonus)",
@@ -181,6 +190,7 @@ export default function App() {
   const [isForeigner, setIsForeigner] = useState<boolean>(false);
   const [otherIncome, setOtherIncome] = useState<number>(0);
   const [netGift, setNetGift] = useState<number>(0);
+  const [region, setRegion] = useState<"region1" | "region2" | "region3" | "region4">("region1");
   const [showExplanation, setShowExplanation] = useState(false);
 
   const formatInput = (val: number) => {
@@ -244,12 +254,18 @@ export default function App() {
 
     // 2. Base calculation (Insurance & Base TNTT Gross)
     if (contractType === ContractType.OFFICIAL_RESIDENT) {
-      const erRate = isForeigner ? EMPLOYER_SI_HI_UI_RATE_FOREIGN : EMPLOYER_SI_HI_UI_RATE_LOCAL;
       const si = Math.min(mainSalary, MAX_SI_HI_SALARY) * (isForeigner ? SI_RATE_FOREIGN : SI_RATE_LOCAL);
       const hi = Math.min(mainSalary, MAX_SI_HI_SALARY) * (isForeigner ? HI_RATE_FOREIGN : HI_RATE_LOCAL);
-      const ui = Math.min(mainSalary, MAX_UI_SALARY) * (isForeigner ? UI_RATE_FOREIGN : UI_RATE_LOCAL);
+      const ui = Math.min(mainSalary, MAX_UI_SALARY_REGIONS[region]) * (isForeigner ? UI_RATE_FOREIGN : UI_RATE_LOCAL);
       totalInsuranceEmployee = si + hi + ui;
-      employerInsurance = Math.min(mainSalary, MAX_SI_HI_SALARY) * erRate;
+
+      // Employer Insurance (Split because of different ceilings)
+      const erSiHiRate = isForeigner ? (0.175 + 0.03) : (0.175 + 0.03); // Both 20.5%
+      const erUiRate = isForeigner ? 0 : 0.01; // Foreigners normally don't pay UI in VN
+      
+      const erSiHi = Math.min(mainSalary, MAX_SI_HI_SALARY) * erSiHiRate;
+      const erUi = Math.min(mainSalary, MAX_UI_SALARY_REGIONS[region]) * erUiRate;
+      employerInsurance = erSiHi + erUi;
     }
 
     const totalDeduction = PERSONAL_DEDUCTION + (dependents * DEPENDENT_DEDUCTION);
@@ -338,7 +354,7 @@ export default function App() {
       trueTotalGross,
       breakdown
     };
-  }, [contractType, mainSalary, totalGrossManual, netGift, dependents, allowances, isForeigner]);
+  }, [contractType, mainSalary, totalGrossManual, netGift, dependents, allowances, isForeigner, region]);
 
   const handleAllowanceChange = (key: keyof typeof allowances, val: number) => {
     setAllowances(prev => ({ ...prev, [key]: val }));
@@ -354,7 +370,10 @@ export default function App() {
               <Calculator className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-800 tracking-tight">{t.title} <span className="text-blue-600">2026</span></h1>
+              <h1 className="text-2xl font-bold text-slate-800 tracking-tight">
+                {t.title} <span className="text-blue-600">2026</span>
+                <span className="text-[10px] text-slate-300 font-medium ml-2 tracking-normal lowercase opacity-70">by hana do</span>
+              </h1>
               <p className="text-sm text-slate-500 font-medium">{t.subtitle}</p>
             </div>
           </div>
@@ -507,29 +526,48 @@ export default function App() {
 
                 {contractType === ContractType.OFFICIAL_RESIDENT && (
                   <div className="grid grid-cols-2 gap-4 items-end pt-2 border-t border-slate-200">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Users className="w-3 h-3 text-slate-400" />
-                        <span className="text-[10px] font-bold text-slate-500 uppercase">{t.subject}</span>
+                    <div className="col-span-2 grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Briefcase className="w-3 h-3 text-slate-400" />
+                          <span className="text-[10px] font-bold text-slate-500 uppercase">{t.region}</span>
+                        </div>
+                        <select 
+                          value={region}
+                          onChange={(e) => setRegion(e.target.value as any)}
+                          className="w-full py-1.5 text-[10px] font-bold rounded bg-slate-100 border border-slate-200 text-slate-600 px-2 focus:ring-0 focus:border-slate-300 h-[34px]"
+                        >
+                          <option value="region1">Vùng I (106.2M)</option>
+                          <option value="region2">Vùng II (94.6M)</option>
+                          <option value="region3">Vùng III (82.8M)</option>
+                          <option value="region4">Vùng IV (74.0M)</option>
+                        </select>
                       </div>
-                      <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200">
-                        <button 
-                          onClick={() => setIsForeigner(false)}
-                          className={`flex-1 py-1 text-[10px] font-bold rounded ${!isForeigner ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:bg-slate-200'}`}
-                        >{t.vn}</button>
-                        <button 
-                          onClick={() => setIsForeigner(true)}
-                          className={`flex-1 py-1 text-[10px] font-bold rounded ${isForeigner ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:bg-slate-200'}`}
-                        >{t.nn}</button>
+
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Users className="w-3 h-3 text-slate-400" />
+                          <span className="text-[10px] font-bold text-slate-500 uppercase">{t.subject}</span>
+                        </div>
+                        <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200 h-[34px]">
+                          <button 
+                            onClick={() => setIsForeigner(false)}
+                            className={`flex-1 text-[10px] font-bold rounded ${!isForeigner ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:bg-slate-200'}`}
+                          >{t.vn}</button>
+                          <button 
+                            onClick={() => setIsForeigner(true)}
+                            className={`flex-1 text-[10px] font-bold rounded ${isForeigner ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:bg-slate-200'}`}
+                          >{t.nn}</button>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="space-y-1">
+                    <div className="col-span-2 space-y-1 mt-2">
                       <label className="text-[10px] font-bold text-slate-500 uppercase">{t.dependents}</label>
                       <div className="flex items-center bg-white border border-slate-200 rounded-lg overflow-hidden h-[34px]">
                         <button 
                           onClick={() => setDependents(Math.max(0, dependents - 1))}
-                          className="w-8 h-full flex items-center justify-center bg-slate-50 border-r border-slate-200 hover:bg-slate-100 transition-colors text-xs font-bold text-slate-500"
+                          className="w-10 h-full flex items-center justify-center bg-slate-50 border-r border-slate-200 hover:bg-slate-100 transition-colors text-xs font-bold text-slate-500"
                         >-</button>
                         <input 
                           type="text"
@@ -539,7 +577,7 @@ export default function App() {
                         />
                         <button 
                           onClick={() => setDependents(dependents + 1)}
-                          className="w-8 h-full flex items-center justify-center bg-slate-50 border-l border-slate-200 hover:bg-slate-100 transition-colors text-xs font-bold text-slate-500"
+                          className="w-10 h-full flex items-center justify-center bg-slate-50 border-l border-slate-200 hover:bg-slate-100 transition-colors text-xs font-bold text-slate-500"
                         >+</button>
                       </div>
                     </div>
@@ -678,8 +716,9 @@ export default function App() {
           </section>
         </main>
 
-        <footer className="text-center text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] py-4 mt-auto">
-          PIT Smart Engine v2.0 • Data Security Guaranteed
+        <footer className="text-center text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] py-8 mt-auto flex flex-col gap-2 italic">
+          <div>PIT Smart Engine v2.0 • Data Security Guaranteed</div>
+          <div className="text-[9px] opacity-70">Crafted with precision by Hana Do</div>
         </footer>
       </div>
 
@@ -715,6 +754,16 @@ export default function App() {
                   <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t.dependentDeduction}</p>
                     <p className="text-lg font-bold text-slate-800 text-right">6,200,000đ</p>
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 col-span-2">
+                    <div className="flex justify-between items-center mb-2">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Trần BHXH/BHYT</p>
+                      <p className="text-sm font-bold text-slate-800">46,800,000đ</p>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Trần BHTN (Vùng I)</p>
+                      <p className="text-sm font-bold text-slate-800">106,200,000đ</p>
+                    </div>
                   </div>
                 </div>
 
