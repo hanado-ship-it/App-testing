@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { 
   Calculator, 
   HelpCircle, 
@@ -124,6 +124,7 @@ const translations = {
     over: "Trên",
     million: "triệuđ",
     flatTaxRate: "Thuế suất toàn phần",
+    views: "lượt xem",
   },
   en: {
     title: "PIT Calculator",
@@ -179,6 +180,7 @@ const translations = {
     over: "Over",
     million: "M",
     flatTaxRate: "Flat Tax Rate",
+    views: "views",
   }
 };
 
@@ -194,6 +196,20 @@ export default function App() {
   const [netGift, setNetGift] = useState<number>(0);
   const [region, setRegion] = useState<"region1" | "region2" | "region3" | "region4">("region1");
   const [showExplanation, setShowExplanation] = useState(false);
+  const [viewCount, setViewCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    // Basic hit counter using counterapi.dev
+    // This is a zero-config way to show total visits
+    fetch("https://api.counterapi.dev/v1/pit-calculator-2026-hana/visits/up")
+      .then(res => res.json())
+      .then(data => {
+        if (data && typeof data.count === 'number') {
+          setViewCount(data.count);
+        }
+      })
+      .catch(err => console.error("Counter error:", err));
+  }, []);
 
   const formatInput = (val: number) => {
     return val.toLocaleString("vi-VN");
@@ -720,9 +736,18 @@ export default function App() {
           </section>
         </main>
 
-        <footer className="text-center text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] py-8 mt-auto flex flex-col gap-2 italic">
-          <div>PIT Smart Engine v2.0 • Data Security Guaranteed</div>
-          <div className="text-[9px] opacity-70">Crafted with precision by Hana Do</div>
+        <footer className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] py-8 mt-auto italic flex flex-col md:flex-row justify-between items-center gap-4 border-t border-slate-200/50">
+          <div className="flex flex-col gap-1 text-center md:text-left">
+            <div>PIT Smart Engine v2.0 • Data Security Guaranteed</div>
+            <div className="text-[9px] opacity-70">Crafted with precision by Hana Do</div>
+          </div>
+          {viewCount !== null && (
+            <div className="flex items-center gap-1.5 opacity-60 bg-white/50 px-3 py-1 rounded-full border border-slate-200">
+              <span className="w-1 h-1 bg-blue-400 rounded-full animate-pulse"></span>
+              <span>{viewCount.toLocaleString()} {t.views}</span>
+              <span className="w-1 h-1 bg-blue-400 rounded-full animate-pulse"></span>
+            </div>
+          )}
         </footer>
       </div>
 
