@@ -125,6 +125,7 @@ const translations = {
     million: "triệuđ",
     flatTaxRate: "Thuế suất toàn phần",
     views: "lượt xem",
+    otherExempt: "Miễn thuế khác",
   },
   en: {
     title: "PIT Calculator",
@@ -181,6 +182,7 @@ const translations = {
     million: "M",
     flatTaxRate: "Flat Tax Rate",
     views: "views",
+    otherExempt: "Other Tax-Free",
   }
 };
 
@@ -227,7 +229,8 @@ export default function App() {
     gas: 0,
     attendance: 0,
     living: 0,
-    performance: 0
+    performance: 0,
+    otherExempt: 0
   });
 
   const grossUpNetToGross = (netTaxableValue: number) => {
@@ -265,9 +268,9 @@ export default function App() {
     // 1. Calculate Exempt Income
     let exemptIncome = 0;
     if (contractType === ContractType.OFFICIAL_RESIDENT) {
-      const exemptLunch = Math.min(allowances.lunch, 730000);
+      const exemptLunch = Math.min(allowances.lunch, 1200000);
       const exemptPhone = allowances.phone;
-      exemptIncome = exemptLunch + exemptPhone;
+      exemptIncome = exemptLunch + exemptPhone + allowances.otherExempt;
     }
 
     // 2. Base calculation (Insurance & Base TNTT Gross)
@@ -523,6 +526,15 @@ export default function App() {
                     />
                   </div>
                   <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t.otherExempt}</label>
+                    <input
+                      type="text"
+                      value={formatInput(allowances.otherExempt)}
+                      onChange={(e) => handleAllowanceChange("otherExempt", parseInput(e.target.value))}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-semibold focus:ring-blue-500 transition-all"
+                    />
+                  </div>
+                  <div className="space-y-1">
                     <label className="text-[10px] font-bold text-orange-500 uppercase tracking-wider block min-h-[20px] leading-tight">{t.otherIncome}</label>
                     <input
                       type="text"
@@ -531,7 +543,7 @@ export default function App() {
                       className="w-full px-3 py-2 border border-orange-200 bg-orange-50/30 rounded-lg text-sm font-bold focus:ring-orange-500 transition-all"
                     />
                   </div>
-                  <div className="space-y-1">
+                  <div className="col-span-2 space-y-1">
                     <label className="text-[10px] font-bold text-teal-600 uppercase tracking-wider block min-h-[20px] leading-tight">{t.netGift}</label>
                     <input
                       type="text"
