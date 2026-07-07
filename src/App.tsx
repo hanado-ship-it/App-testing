@@ -23,7 +23,7 @@ import { motion, AnimatePresence } from "motion/react";
 // --- Constants (New Regulations 2026) ---
 const PERSONAL_DEDUCTION = 15500000;
 const DEPENDENT_DEDUCTION = 6200000;
-const BASIC_SALARY_BASE = 2340000; 
+const BASIC_SALARY_BASE = 2530000; 
 const MAX_SI_HI_SALARY = BASIC_SALARY_BASE * 20; 
 
 // Unemployment Insurance (BHTN) Max Salary for 2026 (Projected)
@@ -126,6 +126,10 @@ const translations = {
     flatTaxRate: "Thuế suất toàn phần",
     views: "lượt xem",
     otherExempt: "Miễn thuế khác",
+    newRuleTitle: "Cập nhật từ 01/07/2026",
+    newRule1: "Mức tiền ăn trưa miễn thuế tối đa tăng lên 1,200,000đ/tháng.",
+    newRule2: "Lương tối thiểu chung (cơ sở) tăng lên 2,530,000đ/tháng.",
+    probation85: "Nhận 85% lương",
   },
   en: {
     title: "PIT Calculator",
@@ -183,6 +187,10 @@ const translations = {
     flatTaxRate: "Flat Tax Rate",
     views: "views",
     otherExempt: "Other Tax-Free",
+    newRuleTitle: "Updates from July 1, 2026",
+    newRule1: "Max tax-free lunch allowance increases to 1,200,000 VND/month.",
+    newRule2: "General minimum wage increases to 2,530,000 VND/month.",
+    probation85: "Receive 85% salary",
   }
 };
 
@@ -199,6 +207,7 @@ export default function App() {
   const [region, setRegion] = useState<"region1" | "region2" | "region3" | "region4">("region1");
   const [showExplanation, setShowExplanation] = useState(false);
   const [viewCount, setViewCount] = useState<number | null>(null);
+  const [isProbation85, setIsProbation85] = useState(false);
 
   useEffect(() => {
     // Basic hit counter using counterapi.dev
@@ -253,9 +262,11 @@ export default function App() {
     return grossM * 1000000;
   };
 
+  const computedMultiplier = (contractType === ContractType.CONTRACTOR_RESIDENT && isProbation85) ? 0.85 : 1;
+
   const totalGrossManual = useMemo(() => {
-    return mainSalary + Object.values(allowances).reduce((a: number, b: number) => a + b, 0) + otherIncome;
-  }, [mainSalary, allowances, otherIncome]);
+    return (mainSalary + Object.values(allowances).reduce((a: number, b: number) => a + b, 0) + otherIncome) * computedMultiplier;
+  }, [mainSalary, allowances, otherIncome, computedMultiplier]);
 
   const results = useMemo(() => {
     let incomeAfterExemptions = 0;
@@ -265,27 +276,40 @@ export default function App() {
     let pit = 0;
     const breakdown: { range: string; rate: string; amount: number }[] = [];
 
+    const computedMainSalary = mainSalary * computedMultiplier;
+    const computedAllowances = {
+      lunch: allowances.lunch * computedMultiplier,
+      phone: allowances.phone * computedMultiplier,
+      gas: allowances.gas * computedMultiplier,
+      attendance: allowances.attendance * computedMultiplier,
+      living: allowances.living * computedMultiplier,
+      performance: allowances.performance * computedMultiplier,
+      otherExempt: allowances.otherExempt * computedMultiplier,
+    };
+    const computedOtherIncome = otherIncome * computedMultiplier;
+    const computedNetGift = netGift * computedMultiplier;
+
     // 1. Calculate Exempt Income
     let exemptIncome = 0;
     if (contractType === ContractType.OFFICIAL_RESIDENT) {
-      const exemptLunch = Math.min(allowances.lunch, 1200000);
-      const exemptPhone = allowances.phone;
-      exemptIncome = exemptLunch + exemptPhone + allowances.otherExempt;
+      const exemptLunch = Math.min(computedAllowances.lunch, 1200000);
+      const exemptPhone = computedAllowances.phone;
+      exemptIncome = exemptLunch + exemptPhone + computedAllowances.otherExempt;
     }
 
     // 2. Base calculation (Insurance & Base TNTT Gross)
     if (contractType === ContractType.OFFICIAL_RESIDENT) {
-      const si = Math.min(mainSalary, MAX_SI_HI_SALARY) * (isForeigner ? SI_RATE_FOREIGN : SI_RATE_LOCAL);
-      const hi = Math.min(mainSalary, MAX_SI_HI_SALARY) * (isForeigner ? HI_RATE_FOREIGN : HI_RATE_LOCAL);
-      const ui = Math.min(mainSalary, MAX_UI_SALARY_REGIONS[region]) * (isForeigner ? UI_RATE_FOREIGN : UI_RATE_LOCAL);
+      const si = Math.min(computedMainSalary, MAX_SI_HI_SALARY) * (isForeigner ? SI_RATE_FOREIGN : SI_RATE_LOCAL);
+      const hi = Math.min(computedMainSalary, MAX_SI_HI_SALARY) * (isForeigner ? HI_RATE_FOREIGN : HI_RATE_LOCAL);
+      const ui = Math.min(computedMainSalary, MAX_UI_SALARY_REGIONS[region]) * (isForeigner ? UI_RATE_FOREIGN : UI_RATE_LOCAL);
       totalInsuranceEmployee = si + hi + ui;
 
       // Employer Insurance (Split because of different ceilings)
       const erSiHiRate = isForeigner ? (0.175 + 0.03) : (0.175 + 0.03); // Both 20.5%
       const erUiRate = isForeigner ? 0 : 0.01; // Foreigners normally don't pay UI in VN
       
-      const erSiHi = Math.min(mainSalary, MAX_SI_HI_SALARY) * erSiHiRate;
-      const erUi = Math.min(mainSalary, MAX_UI_SALARY_REGIONS[region]) * erUiRate;
+      const erSiHi = Math.min(computedMainSalary, MAX_SI_HI_SALARY) * erSiHiRate;
+      const erUi = Math.min(computedMainSalary, MAX_UI_SALARY_REGIONS[region]) * erUiRate;
       employerInsurance = erSiHi + erUi;
     }
 
@@ -318,7 +342,7 @@ export default function App() {
     const initialTaxableBaseNet = initialTaxableBaseGross - initialTax;
 
     // 3. Gross up the combined Net
-    const targetTotalTaxableNet = initialTaxableBaseNet + netGift;
+    const targetTotalTaxableNet = initialTaxableBaseNet + computedNetGift;
     let totalTaxableGross = 0;
     
     if (contractType === ContractType.OFFICIAL_RESIDENT) {
@@ -455,18 +479,39 @@ export default function App() {
                 <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
                 {t.incomeInfo}
               </h2>
+              {contractType === ContractType.CONTRACTOR_RESIDENT && (
+                <div className="flex items-center gap-2 bg-blue-50/50 p-3 rounded-lg border border-blue-100 mt-2">
+                  <input
+                    type="checkbox"
+                    id="probation85"
+                    checked={isProbation85}
+                    onChange={(e) => setIsProbation85(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                  />
+                  <label htmlFor="probation85" className="text-sm font-semibold text-blue-900 cursor-pointer select-none">
+                    {t.probation85}
+                  </label>
+                </div>
+              )}
 
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-700">{t.mainSalary}</label>
+                  <div className="flex justify-between items-center">
+                    <label className="text-sm font-semibold text-slate-700">{t.mainSalary}</label>
+                    {totalGrossManual > 0 && (
+                      <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+                        {((mainSalary * computedMultiplier) / totalGrossManual * 100).toFixed(1)}% Gross
+                      </span>
+                    )}
+                  </div>
                   <div className="relative">
                     <input
                       type="text"
                       value={formatInput(mainSalary)}
                       onChange={(e) => setMainSalary(parseInput(e.target.value))}
-                      className="w-full bg-white border border-slate-300 rounded-lg py-3 pl-4 pr-12 text-lg font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+                      className="w-full bg-white border border-slate-300 rounded-lg py-2.5 pl-4 pr-12 text-base font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
                     />
-                    <span className="absolute right-4 top-3.5 text-slate-400 font-bold">VND</span>
+                    <span className="absolute right-4 top-2.5 text-slate-400 font-bold text-sm">VND</span>
                   </div>
                 </div>
 
@@ -799,7 +844,7 @@ export default function App() {
                   <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 col-span-2">
                     <div className="flex justify-between items-center mb-2">
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Trần BHXH/BHYT</p>
-                      <p className="text-sm font-bold text-slate-800">46,800,000đ</p>
+                      <p className="text-sm font-bold text-slate-800">50,600,000đ</p>
                     </div>
                     <div className="flex justify-between items-center">
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Trần BHTN (Vùng I)</p>
@@ -828,6 +873,26 @@ export default function App() {
                       </div>
                     ))}
                   </div>
+                </div>
+
+                <div className="bg-amber-50 p-6 rounded-xl border border-amber-200">
+                  <h4 className="text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                    </span>
+                    {t.newRuleTitle}
+                  </h4>
+                  <ul className="space-y-3">
+                    <li className="flex gap-2 text-sm text-amber-900">
+                      <span className="text-amber-500 font-bold">•</span>
+                      <span>{t.newRule1}</span>
+                    </li>
+                    <li className="flex gap-2 text-sm text-amber-900">
+                      <span className="text-amber-500 font-bold">•</span>
+                      <span>{t.newRule2}</span>
+                    </li>
+                  </ul>
                 </div>
               </div>
 
